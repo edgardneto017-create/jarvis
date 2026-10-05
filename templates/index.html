@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JARVIS V1</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box} body{margin:0;background:#080b12;color:#edf2f7}
+.wrap{max-width:860px;margin:auto;min-height:100vh;display:flex;flex-direction:column}
+header{padding:22px 18px;border-bottom:1px solid #202635;display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;border:1px solid #4b90ff;border-radius:50%;display:grid;place-items:center;color:#6ea8ff;font-weight:800}
+h1{font-size:20px;margin:0}.sub{color:#8e9aaa;font-size:12px;margin-top:3px}
+main{flex:1;padding:20px 14px;overflow:auto}.msg{max-width:78%;padding:12px 14px;border-radius:16px;margin:10px 0;white-space:pre-wrap;line-height:1.45}
+.user{margin-left:auto;background:#18345d}.ai{background:#151b26;border:1px solid #252d3b}
+.empty{text-align:center;color:#8993a3;margin-top:18vh}.empty h2{color:#eef2f8;font-size:27px}
+footer{padding:12px 14px 18px;border-top:1px solid #202635}
+form{display:flex;gap:8px}textarea{flex:1;resize:none;min-height:48px;max-height:140px;background:#111722;border:1px solid #293244;border-radius:14px;color:#fff;padding:13px;font:inherit;outline:none}
+button{border:0;border-radius:14px;background:#2d79ff;color:white;padding:0 18px;font-weight:700}button:disabled{opacity:.5}
+.hint{font-size:11px;color:#737e8e;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="logo">J</div><div><h1>JARVIS V1</h1><div class="sub">Assistente pessoal • texto • memória</div></div></header>
+<main id="chat"><div class="empty" id="empty"><h2>Olá.</h2><p>Faça uma pergunta para começar.</p></div></main>
+<footer>
+<form id="form"><textarea id="input" placeholder="Fale com o JARVIS..." rows="1"></textarea><button id="send">Enviar</button></form>
+<div class="hint">Ex.: “Explique derivada” • “Lembre que meu projeto se chama JARVIS V1”</div>
+</footer>
+</div>
+<script>
+const chat=document.querySelector("#chat"), form=document.querySelector("#form"), input=document.querySelector("#input"), send=document.querySelector("#send");
+let history=[];
+function add(role,text){document.querySelector("#empty")?.remove();const d=document.createElement("div");d.className="msg "+(role==="user"?"user":"ai");d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+form.addEventListener("submit",async e=>{
+ e.preventDefault(); const message=input.value.trim(); if(!message)return;
+ add("user",message); input.value=""; send.disabled=true;
+ try{
+  const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message,history})});
+  const data=await r.json(); if(!r.ok) throw new Error(data.error||"Erro");
+  add("assistant",data.answer); history.push({role:"user",content:message},{role:"assistant",content:data.answer});
+ }catch(err){add("assistant","Não consegui responder agora. Verifique a configuração da IA no servidor.");}
+ send.disabled=false; input.focus();
+});
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+</script>
+</body>
+</html>
